@@ -1,8 +1,8 @@
-# Gyroline DIY (starter project)
+# MobiLine
 
-A minimal Android/Kotlin starting point for a wheel-alignment measurement
-app, modeled on the Gyraline G1/G2 concept: use the phone's onboard sensors
-to read camber (and eventually toe/caster) off a wheel rim.
+An Android/Kotlin wheel-alignment measurement app, modeled on the Gyraline
+G1/G2 concept: use the phone's onboard sensors to read camber and toe off a
+wheel rim.
 
 ## What's here
 
