@@ -1,6 +1,7 @@
 package com.example.mobiline.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,10 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,63 +46,50 @@ import kotlin.math.sin
 /**
  * Toe uses yaw (heading) instead of roll, measured BODY-ALIGN style.
  *
- * WHY BODY REFERENCES (this replaced the old rear-axle-average approach):
+ * WHY BODY REFERENCES:
  * The phone's compass heading is only as good as the magnetic field around
  * it, and a car's steel bends that field -- differently at each corner.
- * That's why the old "average the rear wheels" reference produced garbage
- * like a 19° rear total toe: it trusted two absolute compass headings taken
- * at opposite sides of a car-sized chunk of steel.
- *
  * The fix is to measure every wheel against a FIXED BODY REFERENCE SURFACE
- * captured on the SAME side moments before the wheel ("you have
- * approximately 20 seconds to take a wheel measurement after refreshing
- * the base" is the rule of thumb). The body spot and the
- * wheel are read back-to-back with the phone in the same position and
- * orientation, so the magnetic distortion -- which is roughly constant
- * across that small area and short time -- is present in BOTH readings and
- * cancels when you subtract them.
+ * captured on the SAME side moments before the wheel. The body spot and
+ * the wheel are read back-to-back, so the magnetic distortion -- roughly
+ * constant across that small area and short time -- is present in BOTH
+ * readings and cancels when you subtract them.
  *
- * HOW THE PHONE MUST BE MOUNTED -- this has to be right or every reading
- * is garbage:
- * Place the phone FLAT against the surface (screen facing UP toward the
- * sky) and keep the TOP of the phone pointing toward the FRONT of the car
- * ("Front" at the top of the screen must face the front of the vehicle at
- * all times). Yaw from the
- * rotation-vector sensor is only a true compass heading when the phone is
- * flat; held upright (as Camber does) the number is meaningless, which is
- * the flaw behind the earlier wrong readings.
+ * IMPORTANT: the reference SPOT itself doesn't move -- what drifts is the
+ * phone's *reading* of it (ambient interference shifts slightly as you
+ * move around the car, plus ordinary sensor noise/drift). Refreshing the
+ * base right before a wheel just keeps the two readings close enough in
+ * time that whatever drift exists is common to both and cancels out.
  *
- * SEQUENCE -- one full side of the car at a time, so you walk around the
- * car once instead of zigzagging left-right-left-right:
- *   1. LEFT body reference (3 readings).
- *   2. Rear-Left:   refresh LEFT  base, then wheel (3 readings).
- *   3. Front-Left:  refresh LEFT  base, then wheel (3 readings).
- *   4. RIGHT body reference (3 readings).
- *   5. Rear-Right:  refresh RIGHT base, then wheel (3 readings).
- *   6. Front-Right: refresh RIGHT base, then wheel (3 readings).
- * The order carries no mathematical weight: each wheel only depends on its
- * own side's base, captured moments earlier. Grouping by side just keeps
- * the walk short and each side's readings close together in time.
+ * SNAPSHOTTING (important for correctness): each wheel's individual toe is
+ * computed from -- and locked to -- whatever the base was AT THE MOMENT
+ * that wheel finished its 3rd tap. Refreshing a base afterward (e.g. to
+ * capture the OTHER wheel on the same side) never changes or invalidates
+ * an already-captured wheel's number, since that number isn't recomputed
+ * against the live base -- it's frozen at capture time. Freshness (see
+ * [isPairingFresh]) is likewise decided once, at that same moment.
+ *
+ * INTERACTION MODEL (tap-based, no forced order):
+ * Each tire on screen is itself the capture control -- tap a tire to add
+ * one reading toward that wheel's average (3 taps, then it locks in; tap
+ * again to re-capture/refresh it, which also re-snapshots its base pairing
+ * from scratch). A small base button sits between the two LEFT tires and
+ * another between the two RIGHT tires. There's no requirement to start on
+ * the left or the right -- the PRIMARY result (total toe per axle) only
+ * needs both wheels on that axle captured, in any order, and doesn't need
+ * a base at all.
  *
  * MATH:
  *   PRIMARY -- TOTAL toe per axle is the DIRECT left-vs-right difference
  *   between the two wheels on that axle. No body reference is involved, so
  *   whatever magnetic distortion the car causes is roughly common to both
- *   readings (same hand hold, seconds apart) and cancels out. After a
- *   possible 180° flip correction, this is the number to trust.
+ *   readings (same hand hold, seconds apart) and cancels out.
  *
  *   DIAGNOSTIC -- individual wheel toe uses the same-side body reference
- *   (left-side wheels: wheelYaw - leftBaseYaw; right-side: rightBaseYaw -
- *   wheelYaw), each also 180° flip-corrected when it lands beyond ±90°.
- *   These are more sensitive to the phone's direction and are best treated
- *   as a rough cross-check rather than the headline result.
+ *   as it stood at capture time (see snapshotting above), flip-corrected
+ *   for a possible 180° phone flip.
  *
  * Sign convention: positive = toe-in, negative = toe-out.
- *
- * A good body reference spot: the pinch-weld seam under the rocker panel
- * (present on almost any car), a frame rail, or any flat, repeatable body
- * surface that exists on both sides. Use the SAME spot and orientation
- * every time you capture or refresh a base.
  */
 @Composable
 fun ToeScreen(
@@ -111,17 +101,37 @@ fun ToeScreen(
     val smoothedRoll = remember { SmoothedValue(alpha = 0.1f) }
     val smoothedPitch = remember { SmoothedValue(alpha = 0.1f) }
 
-    // Body references: started by the initial 3-reading capture, extended
-    // by a refread right before each wheel on that side.
+    // Body references: each tap adds a reading (up to 3); tapping again
+    // once full starts a fresh capture (a "refresh"). *CompletedAt records
+    // the wall-clock time the 3rd reading landed.
     var leftBaseReadings by remember { mutableStateOf(listOf<Float>()) }
     var rightBaseReadings by remember { mutableStateOf(listOf<Float>()) }
+    var leftBaseCompletedAt by remember { mutableStateOf<Long?>(null) }
+    var rightBaseCompletedAt by remember { mutableStateOf<Long?>(null) }
 
-    // 3 readings per wheel, averaged
-    // together to filter out sensor noise before any toe math.
+    // 3 tap-readings per wheel, averaged together to filter out sensor
+    // noise -- used for this wheel's own heading (feeds total toe, which
+    // never depends on a base).
     var rearLeftReadings by remember { mutableStateOf(listOf<Float>()) }
     var rearRightReadings by remember { mutableStateOf(listOf<Float>()) }
     var frontLeftReadings by remember { mutableStateOf(listOf<Float>()) }
     var frontRightReadings by remember { mutableStateOf(listOf<Float>()) }
+
+    // Individual toe + freshness, SNAPSHOTTED at the moment each wheel's
+    // 3rd tap lands -- these do not get recomputed when a base is later
+    // refreshed. Cleared back to null/false as soon as that wheel starts
+    // a fresh re-capture, until it completes again.
+    var frontLeftToe by remember { mutableStateOf<Float?>(null) }
+    var frontRightToe by remember { mutableStateOf<Float?>(null) }
+    var rearLeftToe by remember { mutableStateOf<Float?>(null) }
+    var rearRightToe by remember { mutableStateOf<Float?>(null) }
+    var frontLeftFresh by remember { mutableStateOf(false) }
+    var frontRightFresh by remember { mutableStateOf(false) }
+    var rearLeftFresh by remember { mutableStateOf(false) }
+    var rearRightFresh by remember { mutableStateOf(false) }
+
+    var showInfo by remember { mutableStateOf(false) }
+    var showGuidance by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         repository.orientationFlow().collect { raw ->
@@ -134,11 +144,8 @@ fun ToeScreen(
         }
     }
 
-    // Each reference / wheel heading is the average of its captured readings.
-    val leftBaseYaw: Float? =
-        if (leftBaseReadings.isEmpty()) null else averageHeadings(leftBaseReadings)
-    val rightBaseYaw: Float? =
-        if (rightBaseReadings.isEmpty()) null else averageHeadings(rightBaseReadings)
+    // Wheel headings (used only for the PRIMARY total-toe result, which
+    // never depends on a base and is unaffected by anything below).
     val rearLeftYaw: Float? =
         if (rearLeftReadings.isEmpty()) null else averageHeadings(rearLeftReadings)
     val rearRightYaw: Float? =
@@ -148,31 +155,9 @@ fun ToeScreen(
     val frontRightYaw: Float? =
         if (frontRightReadings.isEmpty()) null else averageHeadings(frontRightReadings)
 
-    // Individual toe, each measured against the body reference on the SAME
-    // side, with auto-correct for a possible 180° phone flip between the
-    // base and wheel readings (a flipped reading shows up as |toe| > 90°,
-    // which real toe can never be).
-    val frontLeftToe: Float? =
-        if (frontLeftYaw != null && leftBaseYaw != null)
-            flipCorrect(normalizeAngle(frontLeftYaw - leftBaseYaw))
-        else null
-    val frontRightToe: Float? =
-        if (frontRightYaw != null && rightBaseYaw != null)
-            flipCorrect(normalizeAngle(rightBaseYaw - frontRightYaw))
-        else null
-    val rearLeftToe: Float? =
-        if (rearLeftYaw != null && leftBaseYaw != null)
-            flipCorrect(normalizeAngle(rearLeftYaw - leftBaseYaw))
-        else null
-    val rearRightToe: Float? =
-        if (rearRightYaw != null && rightBaseYaw != null)
-            flipCorrect(normalizeAngle(rightBaseYaw - rearRightYaw))
-        else null
-
     // PRIMARY RESULT -- total toe per axle from the DIRECT left-vs-right
     // difference on that axle. No body reference involved, so common-mode
-    // magnetic distortion (same hand hold, seconds apart) cancels out. This
-    // is the number that reads correctly even before a base exists.
+    // magnetic distortion cancels out regardless of any base state.
     val rearTotalToe: Float? =
         if (rearLeftYaw != null && rearRightYaw != null)
             flipCorrect(normalizeAngle(rearLeftYaw - rearRightYaw))
@@ -183,15 +168,51 @@ fun ToeScreen(
         else null
 
     val isLevelEnough = abs(current.pitch) < 1.5f && abs(current.roll) < 1.5f
-    val currentStep = when {
-        leftBaseReadings.size < 3 -> 1
-        rearLeftReadings.size < 3 -> 2
-        frontLeftReadings.size < 3 -> 3
-        rightBaseReadings.size < 3 -> 4
-        rearRightReadings.size < 3 -> 5
-        frontRightReadings.size < 3 -> 6
-        else -> 7
+
+    fun tapReading(readings: List<Float>): List<Float> =
+        if (readings.size >= 3) listOf(current.yaw) else readings + current.yaw
+
+    // Handles one tap on a WHEEL tire. On completion (3rd reading), this
+    // snapshots the base -- as it stands right now -- into this wheel's
+    // toe + freshness, permanently (until the wheel is re-captured).
+    // Later base refreshes cannot touch this snapshot.
+    fun onWheelTap(
+        readings: List<Float>,
+        setReadings: (List<Float>) -> Unit,
+        baseReadings: List<Float>,
+        baseCompletedAt: Long?,
+        setToe: (Float?) -> Unit,
+        setFresh: (Boolean) -> Unit,
+        toeFrom: (wheelYaw: Float, baseYaw: Float) -> Float
+    ) {
+        val next = tapReading(readings)
+        setReadings(next)
+        if (next.size == 3) {
+            val wheelYaw = averageHeadings(next)
+            val baseYaw = if (baseReadings.isEmpty()) null else averageHeadings(baseReadings)
+            if (baseYaw != null) {
+                setToe(flipCorrect(normalizeAngle(toeFrom(wheelYaw, baseYaw))))
+                setFresh(isPairingFresh(baseCompletedAt, System.currentTimeMillis()))
+            } else {
+                setToe(null)
+                setFresh(false)
+            }
+        } else {
+            // Mid-recapture -- clear the old snapshot until this wheel
+            // completes again.
+            setToe(null)
+            setFresh(false)
+        }
     }
+
+    fun onBaseTap(readings: List<Float>, setReadings: (List<Float>) -> Unit, setCompletedAt: (Long?) -> Unit) {
+        val next = tapReading(readings)
+        setReadings(next)
+        setCompletedAt(if (next.size == 3) System.currentTimeMillis() else null)
+    }
+
+    val anyImplausible = listOfNotNull(frontTotalToe, rearTotalToe).any { abs(it) > 10f }
+    val hasResults = frontTotalToe != null || rearTotalToe != null
 
     Column(
         modifier = Modifier
@@ -201,205 +222,194 @@ fun ToeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Toe", fontWeight = FontWeight.Bold)
-
-        val wheelMount =
-            "Place the phone FLAT against the OUTER edge of the wheel rim " +
-                "(not the tire), screen facing UP toward the sky, TOP of the " +
-                "phone pointing toward the FRONT of the car."
-        val baseMount =
-            "Hold the phone FLAT against the body spot, screen facing UP " +
-                "toward the sky, TOP of the phone pointing toward the FRONT " +
-                "of the car."
-        val nextWheelHint = " Tap \"Capture\" 3 times -- the app averages " +
-            "them and moves on automatically."
-
-        val instructions = when (currentStep) {
-            1 -> "\nStep 1 of 6: Set the LEFT body reference.\n\n" +
-                "Find a flat, repeatable spot on the car body on the LEFT " +
-                "side -- the pinch-weld seam under the rocker panel is the " +
-                "best choice on almost any car. You'll use the SAME spot " +
-                "for every left-side reading.\n\n" +
-                baseMount + nextWheelHint + "\n\nEvery left wheel is later " +
-                "compared to this body spot, which cancels the magnetic " +
-                "interference the car's steel causes.\n\nYou'll finish the " +
-                "whole LEFT side (steps 1-3) before switching to the right."
-            2 -> "\nStep 2 of 6: REAR-LEFT wheel.\n\n" +
-                "1) " + baseMount + " at the LEFT body spot, then tap " +
-                "\"Refresh Left Base\".\n" +
-                "2) RIGHT AWAY (within about 20 seconds), move to the " +
-                "REAR-LEFT wheel. " + wheelMount + " and tap \"Capture " +
-                "Rear Left\" 3 times.\n\nReading the body spot and the " +
-                "wheel back-to-back is what makes the compass error cancel."
-            3 -> "\nStep 3 of 6: FRONT-LEFT wheel.\n\n" +
-                "1) " + baseMount + " at the LEFT body spot, then tap " +
-                "\"Refresh Left Base\".\n" +
-                "2) RIGHT AWAY (within about 20 seconds), move to the " +
-                "FRONT-LEFT wheel. " + wheelMount + " and tap \"Capture " +
-                "Front Left\" 3 times.\n\nThat's the left side done."
-            4 -> "\nStep 4 of 6: Set the RIGHT body reference.\n\n" +
-                "Now walk around to the RIGHT side and find the matching " +
-                "spot -- the pinch-weld seam under the right rocker panel. " +
-                "Use the SAME spot for every right-side reading.\n\n" +
-                baseMount + nextWheelHint
-            5 -> "\nStep 5 of 6: REAR-RIGHT wheel.\n\n" +
-                "1) " + baseMount + " at the RIGHT body spot, then tap " +
-                "\"Refresh Right Base\".\n" +
-                "2) RIGHT AWAY (within about 20 seconds), move to the " +
-                "REAR-RIGHT wheel. " + wheelMount + " and tap \"Capture " +
-                "Rear Right\" 3 times."
-            6 -> "\nStep 6 of 6: FRONT-RIGHT wheel.\n\n" +
-                "1) " + baseMount + " at the RIGHT body spot, then tap " +
-                "\"Refresh Right Base\".\n" +
-                "2) RIGHT AWAY (within about 20 seconds), move to the " +
-                "FRONT-RIGHT wheel. " + wheelMount + " and tap \"Capture " +
-                "Front Right\" 3 times."
-            else -> "\nDone! Results are below. Tap Restart to measure " +
-                "again."
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Toe", fontWeight = FontWeight.Bold)
+            TextButton(onClick = { showInfo = !showInfo }) {
+                Text(if (showInfo) "\u2715 Info" else "\u2630 Info")
+            }
         }
-        Text(instructions, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+
+        if (showInfo) {
+            Text(
+                text = "\nTap a tire to capture that wheel (3 taps, " +
+                    "averaged -- tap again after to re-capture it). Hold " +
+                    "the phone FLAT against the outer rim edge, screen " +
+                    "facing UP toward the sky, TOP of the phone pointing " +
+                    "toward the FRONT of the car.\n\nUse the small base " +
+                    "button between the left tires (or the right tires) " +
+                    "to capture/refresh that side's body reference right " +
+                    "before tapping a tire on that side -- you can start " +
+                    "on whichever side of the car you're standing at. The " +
+                    "reference spot itself doesn't move; refreshing just " +
+                    "keeps the base and wheel readings close in time so " +
+                    "ambient magnetic drift cancels out.\n\nA body " +
+                    "reference is a flat, repeatable spot on the car -- " +
+                    "the pinch-weld seam under the rocker panel works on " +
+                    "almost any car. Use the same spot every time on that " +
+                    "side.",
+                textAlign = TextAlign.Center,
+                color = Color.Gray,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         Text(
             text = "\n%.2f°".format(current.yaw),
             color = if (isLevelEnough) Color(0xFF2E7D32) else Color(0xFFC62828)
         )
-        Text(if (isLevelEnough) "Steady" else "Keep the phone level and flat -- screen facing UP toward the sky, top toward the front -- until this turns green")
+        Text(
+            if (isLevelEnough) "Steady -- tap a tire or base button to capture"
+            else "Keep the phone level and flat until this turns green"
+        )
 
-        Button(
-            onClick = { leftBaseReadings = leftBaseReadings + current.yaw },
-            enabled = currentStep == 1
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Text("Capture Left Base (${leftBaseReadings.size}/3)")
-        }
-        Button(
-            onClick = { leftBaseReadings = leftBaseReadings + current.yaw },
-            enabled = currentStep == 2 || currentStep == 3
-        ) {
-            Text("Refresh Left Base")
-        }
-        Button(
-            onClick = { rearLeftReadings = rearLeftReadings + current.yaw },
-            enabled = currentStep == 2
-        ) {
-            Text("Capture Rear Left (${rearLeftReadings.size}/3)")
-        }
-        Button(
-            onClick = { frontLeftReadings = frontLeftReadings + current.yaw },
-            enabled = currentStep == 3
-        ) {
-            Text("Capture Front Left (${frontLeftReadings.size}/3)")
-        }
-        Button(
-            onClick = { rightBaseReadings = rightBaseReadings + current.yaw },
-            enabled = currentStep == 4
-        ) {
-            Text("Capture Right Base (${rightBaseReadings.size}/3)")
-        }
-        Button(
-            onClick = { rightBaseReadings = rightBaseReadings + current.yaw },
-            enabled = currentStep == 5 || currentStep == 6
-        ) {
-            Text("Refresh Right Base")
-        }
-        Button(
-            onClick = { rearRightReadings = rearRightReadings + current.yaw },
-            enabled = currentStep == 5
-        ) {
-            Text("Capture Rear Right (${rearRightReadings.size}/3)")
-        }
-        Button(
-            onClick = { frontRightReadings = frontRightReadings + current.yaw },
-            enabled = currentStep == 6
-        ) {
-            Text("Capture Front Right (${frontRightReadings.size}/3)")
+            // LEFT column: front-left tire, left base button, rear-left tire.
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                ToeTireCapture(
+                    label = "Front-left",
+                    readings = frontLeftReadings,
+                    toe = frontLeftToe,
+                    fresh = frontLeftFresh,
+                    onTap = {
+                        onWheelTap(
+                            frontLeftReadings, { frontLeftReadings = it },
+                            leftBaseReadings, leftBaseCompletedAt,
+                            { frontLeftToe = it }, { frontLeftFresh = it },
+                            { wheelYaw, baseYaw -> wheelYaw - baseYaw }
+                        )
+                    },
+                    rotationDeg = clampVisualRotation((frontLeftToe ?: 0f) * ToeVisualExaggeration)
+                )
+                BaseCaptureButton(
+                    label = "Left Base",
+                    readings = leftBaseReadings,
+                    onTap = { onBaseTap(leftBaseReadings, { leftBaseReadings = it }, { leftBaseCompletedAt = it }) }
+                )
+                ToeTireCapture(
+                    label = "Rear-left",
+                    readings = rearLeftReadings,
+                    toe = rearLeftToe,
+                    fresh = rearLeftFresh,
+                    onTap = {
+                        onWheelTap(
+                            rearLeftReadings, { rearLeftReadings = it },
+                            leftBaseReadings, leftBaseCompletedAt,
+                            { rearLeftToe = it }, { rearLeftFresh = it },
+                            { wheelYaw, baseYaw -> wheelYaw - baseYaw }
+                        )
+                    },
+                    rotationDeg = clampVisualRotation((rearLeftToe ?: 0f) * ToeVisualExaggeration)
+                )
+            }
+
+            // CENTER column: the two total-toe results.
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.width(110.dp)
+            ) {
+                Text(
+                    text = frontTotalToe?.let { "%.2f°".format(it) } ?: "---",
+                    fontWeight = FontWeight.Bold
+                )
+                Text("Front\nTotal Toe", textAlign = TextAlign.Center, fontSize = 12.sp)
+                Text(
+                    text = "\n" + (rearTotalToe?.let { "%.2f°".format(it) } ?: "---"),
+                    fontWeight = FontWeight.Bold
+                )
+                Text("Rear\nTotal Toe", textAlign = TextAlign.Center, fontSize = 12.sp)
+            }
+
+            // RIGHT column: front-right tire, right base button, rear-right tire.
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                ToeTireCapture(
+                    label = "Front-right",
+                    readings = frontRightReadings,
+                    toe = frontRightToe,
+                    fresh = frontRightFresh,
+                    onTap = {
+                        onWheelTap(
+                            frontRightReadings, { frontRightReadings = it },
+                            rightBaseReadings, rightBaseCompletedAt,
+                            { frontRightToe = it }, { frontRightFresh = it },
+                            { wheelYaw, baseYaw -> baseYaw - wheelYaw }
+                        )
+                    },
+                    rotationDeg = clampVisualRotation(-(frontRightToe ?: 0f) * ToeVisualExaggeration)
+                )
+                BaseCaptureButton(
+                    label = "Right Base",
+                    readings = rightBaseReadings,
+                    onTap = { onBaseTap(rightBaseReadings, { rightBaseReadings = it }, { rightBaseCompletedAt = it }) }
+                )
+                ToeTireCapture(
+                    label = "Rear-right",
+                    readings = rearRightReadings,
+                    toe = rearRightToe,
+                    fresh = rearRightFresh,
+                    onTap = {
+                        onWheelTap(
+                            rearRightReadings, { rearRightReadings = it },
+                            rightBaseReadings, rightBaseCompletedAt,
+                            { rearRightToe = it }, { rearRightFresh = it },
+                            { wheelYaw, baseYaw -> baseYaw - wheelYaw }
+                        )
+                    },
+                    rotationDeg = clampVisualRotation(-(rearRightToe ?: 0f) * ToeVisualExaggeration)
+                )
+            }
         }
 
-        frontTotalToe?.let { Text("\nFRONT TOTAL TOE: %.2f°  (most reliable)".format(it)) }
-        rearTotalToe?.let { Text("REAR TOTAL TOE: %.2f°  (most reliable)".format(it)) }
-        frontLeftToe?.let { Text("Front-left individual toe: %.2f°".format(it)) }
-        frontRightToe?.let { Text("Front-right individual toe: %.2f°".format(it)) }
-        rearLeftToe?.let { Text("Rear-left individual toe: %.2f°".format(it)) }
-        rearRightToe?.let { Text("Rear-right individual toe: %.2f°".format(it)) }
+        // Actionable warning -- kept visible unconditionally since it flags
+        // data that's likely garbage rather than just explaining a good result.
+        if (anyImplausible) {
+            Text(
+                text = "\nThe TOTAL numbers are far larger than a real toe " +
+                    "reading. Either a wheel was read with the phone " +
+                    "flipped AROUND, or the level-surface / steering-" +
+                    "center preflight wasn't actually satisfied. Restart " +
+                    "and double-check the phone's direction on every wheel.",
+                textAlign = TextAlign.Center,
+                color = Color(0xFFC62828),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+        }
 
-        if (currentStep == 7) {
-            // Visual: each tire rotated by its individual toe (exaggerated),
-            // a top-down view with the front of the car pointing UP.
+        if (hasResults) {
+            TextButton(onClick = { showGuidance = !showGuidance }, modifier = Modifier.padding(top = 8.dp)) {
+                Text(if (showGuidance) "Hide guidance \u25B4" else "Show guidance \u25BE")
+            }
+        }
+
+        if (hasResults && showGuidance) {
             Text(
                 text = "\nTop-down view -- front of the car points UP. " +
-                    "Each tire is rotated by that wheel's individual toe, " +
-                    "exaggerated ${ToeVisualExaggeration.toInt()}x so small " +
-                    "angles are visible.",
+                    "Each tire is rotated by that wheel's individual toe " +
+                    "as it stood when captured, exaggerated " +
+                    "${ToeVisualExaggeration.toInt()}x so small angles are " +
+                    "visible. The Total Toe numbers above are the ones to " +
+                    "trust and don't need a base at all.",
                 textAlign = TextAlign.Center,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(32.dp),
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                ToeTireVisual(
-                    toe = frontLeftToe,
-                    label = "Front-left",
-                    rotationDeg = clampVisualRotation(
-                        (frontLeftToe ?: 0f) * ToeVisualExaggeration
-                    )
-                )
-                ToeTireVisual(
-                    toe = frontRightToe,
-                    label = "Front-right",
-                    rotationDeg = clampVisualRotation(
-                        -(frontRightToe ?: 0f) * ToeVisualExaggeration
-                    )
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(32.dp),
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                ToeTireVisual(
-                    toe = rearLeftToe,
-                    label = "Rear-left",
-                    rotationDeg = clampVisualRotation(
-                        (rearLeftToe ?: 0f) * ToeVisualExaggeration
-                    )
-                )
-                ToeTireVisual(
-                    toe = rearRightToe,
-                    label = "Rear-right",
-                    rotationDeg = clampVisualRotation(
-                        -(rearRightToe ?: 0f) * ToeVisualExaggeration
-                    )
-                )
-            }
 
-            val anyImplausible = listOfNotNull(
-                frontTotalToe, rearTotalToe
-            ).any { abs(it) > 10f }
-
-            if (anyImplausible) {
-                Text(
-                    text = "\nThe TOTAL numbers are still far larger than a " +
-                        "real toe reading (actual toe is under about 2°). " +
-                        "This is the direct left-vs-right difference, which " +
-                        "shouldn't happen if the car is parked on level ground " +
-                        "and both wheels were read the same way. Either one " +
-                        "wheel's reading was taken with the phone flipped " +
-                        "AROUND (top pointing toward the rear), or the level " +
-                        "surface / steering-center preflight isn't actually " +
-                        "satisfied. Restart and double-check the phone's " +
-                        "direction on every wheel.",
-                    textAlign = TextAlign.Center,
-                    color = Color(0xFFC62828),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                )
-            } else {
+            if (!anyImplausible) {
                 Text(
                     text = "\nThese totals come from the direct difference " +
                         "between the two wheels on each axle, so magnetic " +
                         "interference mostly cancels out. The individual " +
-                        "wheel numbers below depend on a body reference and " +
-                        "are more sensitive to the phone's direction -- treat " +
-                        "those as diagnostic.",
+                        "wheel numbers depend on a body reference and are " +
+                        "more sensitive to the phone's direction -- treat " +
+                        "those as diagnostic, and greyed-out ones mean the " +
+                        "base wasn't refreshed shortly before that wheel " +
+                        "was captured.",
                     textAlign = TextAlign.Center,
                     color = Color.Gray,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -427,7 +437,7 @@ fun ToeScreen(
 
             val frontSplitUneven = frontLeftToe != null &&
                 frontRightToe != null &&
-                abs(frontLeftToe - frontRightToe) > 0.3f
+                abs(frontLeftToe!! - frontRightToe!!) > 0.3f
             if (frontSplitUneven) {
                 Text(
                     text = "\nThe left and right front readings differ " +
@@ -460,8 +470,18 @@ fun ToeScreen(
             rearRightReadings = emptyList()
             frontLeftReadings = emptyList()
             frontRightReadings = emptyList()
-        }) {
-            Text("\nRestart")
+            leftBaseCompletedAt = null
+            rightBaseCompletedAt = null
+            frontLeftToe = null
+            frontRightToe = null
+            rearLeftToe = null
+            rearRightToe = null
+            frontLeftFresh = false
+            frontRightFresh = false
+            rearLeftFresh = false
+            rearRightFresh = false
+        }, modifier = Modifier.padding(top = 16.dp)) {
+            Text("Restart")
         }
     }
 }
@@ -482,6 +502,25 @@ private const val ToeVisualExaggeration = 15f
 private const val ToeVisualBaseRotation = 0f
 
 /**
+ * How long after a base is refreshed it's still considered a valid pairing
+ * for a wheel reading taken against it. Mirrors the original "~20 seconds"
+ * rule of thumb with a small buffer. This is checked ONCE, at the moment
+ * the wheel completes -- not re-checked later.
+ */
+private const val STALE_BASE_WINDOW_MS = 25_000L
+
+/**
+ * Whether a wheel's toe reading was a trustworthy pairing with its side's
+ * body reference AT THE MOMENT IT WAS CAPTURED: the base must have existed
+ * and completed at or before the wheel, within [STALE_BASE_WINDOW_MS].
+ */
+private fun isPairingFresh(baseCompletedAt: Long?, wheelCompletedAt: Long): Boolean {
+    if (baseCompletedAt == null) return false
+    val gap = wheelCompletedAt - baseCompletedAt
+    return gap in 0..STALE_BASE_WINDOW_MS
+}
+
+/**
  * Clamp the visual rotation so a garbage reading (or a big toe error)
  * doesn't spin the tire graphic around like a propeller -- beyond ±45° of
  * visible tilt the number is the useful information anyway.
@@ -490,33 +529,78 @@ private fun clampVisualRotation(degrees: Float): Float =
     degrees.coerceIn(-45f, 45f)
 
 /**
- * One tire graphic, rotated by a wheel's individual toe to visualize which
- * way that wheel points. This is a TOP-DOWN view: the front of the car
- * points UP the screen, so:
- *   LEFT wheels:  toe-in (+) tilts the tire's top toward the centerline
- *                 (clockwise)          -> rotationDeg =  +toe * exaggeration
- *   RIGHT wheels: toe-in (+) tilts the top toward the centerline
- *                 (counter-clockwise)  -> rotationDeg =  -toe * exaggeration
+ * One tire graphic that IS the capture control: tapping it adds a reading
+ * (up to 3, averaged) toward this wheel's heading. This is a TOP-DOWN view:
+ * the front of the car points UP the screen. `toe` and `fresh` are the
+ * SNAPSHOTTED values from the moment this wheel was captured -- they don't
+ * change just because a base gets refreshed afterward.
  */
 @Composable
-private fun ToeTireVisual(
-    toe: Float?,
+private fun ToeTireCapture(
     label: String,
+    readings: List<Float>,
+    toe: Float?,
+    fresh: Boolean,
+    onTap: () -> Unit,
     rotationDeg: Float
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val showAngle = toe != null && fresh
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onTap).padding(4.dp)
+    ) {
         Image(
             painter = painterResource(id = R.drawable.tire),
-            contentDescription = "$label tire, tilted to show toe direction",
+            contentDescription = "$label tire -- tap to capture a reading",
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .size(width = 44.dp, height = 110.dp)
                 .graphicsLayer {
-                    rotationZ = ToeVisualBaseRotation + rotationDeg
+                    rotationZ = if (showAngle) ToeVisualBaseRotation + rotationDeg else ToeVisualBaseRotation
+                    alpha = if (toe != null && !fresh) 0.35f else 1f
                 }
         )
-        Text(label)
-        toe?.let { Text("%.2f°".format(it), fontSize = 12.sp) }
+        Text(label, fontSize = 12.sp)
+        Text(
+            text = when {
+                readings.isEmpty() -> "Tap to capture"
+                readings.size < 3 -> "${readings.size}/3 -- tap to continue"
+                toe == null -> "Captured -- needs base"
+                !fresh -> "%.2f°  (stale base)".format(toe)
+                else -> "%.2f°  (tap to redo)".format(toe)
+            },
+            fontSize = 11.sp,
+            color = if (toe != null && !fresh) Color(0xFFC62828) else Color.Gray,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Small capture control for a side's body reference. A tap adds a reading
+ * (up to 3, averaged); once full, tapping again refreshes it. Refreshing
+ * only affects wheels captured AFTER this point -- already-captured wheels
+ * on this side keep the snapshot they took at their own capture time.
+ */
+@Composable
+private fun BaseCaptureButton(
+    label: String,
+    readings: List<Float>,
+    onTap: () -> Unit
+) {
+    Button(
+        onClick = onTap,
+        modifier = Modifier.padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = when {
+                readings.isEmpty() -> label
+                readings.size < 3 -> "$label (${readings.size}/3)"
+                else -> "Refresh\n$label"
+            },
+            fontSize = 11.sp,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
