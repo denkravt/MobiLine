@@ -1,4 +1,4 @@
-package com.example.gyrolinediy.sensors
+package com.example.mobiline.sensors
 
 import android.content.Context
 import android.hardware.Sensor

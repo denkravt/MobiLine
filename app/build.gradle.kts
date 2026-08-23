@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.gyrolinediy"
+    namespace = "com.example.mobiline"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.gyrolinediy"
+        applicationId = "com.example.mobiline"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

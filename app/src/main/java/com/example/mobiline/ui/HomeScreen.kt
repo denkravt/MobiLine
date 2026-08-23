@@ -1,4 +1,4 @@
-package com.example.gyrolinediy.ui
+package com.example.mobiline.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,7 +31,7 @@ fun HomeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Gyroline DIY", fontWeight = FontWeight.Bold)
+        Text("MobiLine", fontWeight = FontWeight.Bold)
         Text("What do you want to measure?")
 
         Column(
@@ -58,7 +58,7 @@ fun HomeScreen(
             Text(
                 "Whether the wheels point slightly toward or away from " +
                     "each other when you look down from above. Needs all " +
-                    "four wheels measured, starting at the rear.",
+                    "four wheels measured, one side of the car at a time.",
                 textAlign = TextAlign.Center,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth(0.8f)

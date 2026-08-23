@@ -1,4 +1,4 @@
-package com.example.gyrolinediy
+package com.example.mobiline
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,13 +10,13 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.gyrolinediy.sensors.CalibrationOffset
-import com.example.gyrolinediy.sensors.OrientationRepository
-import com.example.gyrolinediy.ui.CalibrationScreen
-import com.example.gyrolinediy.ui.CamberScreen
-import com.example.gyrolinediy.ui.HomeScreen
-import com.example.gyrolinediy.ui.PreflightScreen
-import com.example.gyrolinediy.ui.ToeScreen
+import com.example.mobiline.sensors.CalibrationOffset
+import com.example.mobiline.sensors.OrientationRepository
+import com.example.mobiline.ui.CalibrationScreen
+import com.example.mobiline.ui.CamberScreen
+import com.example.mobiline.ui.HomeScreen
+import com.example.mobiline.ui.PreflightScreen
+import com.example.mobiline.ui.ToeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

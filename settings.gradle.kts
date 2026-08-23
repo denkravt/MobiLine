@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GyrolineDIY"
+rootProject.name = "MobiLine"
 include(":app")

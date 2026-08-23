@@ -1,4 +1,4 @@
-package com.example.gyrolinediy.ui
+package com.example.mobiline.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

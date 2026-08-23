@@ -1,4 +1,4 @@
-package com.example.gyrolinediy.ui
+package com.example.mobiline.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,10 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.gyrolinediy.sensors.CalibrationOffset
-import com.example.gyrolinediy.sensors.OrientationRepository
-import com.example.gyrolinediy.sensors.Orientation
-import com.example.gyrolinediy.sensors.SmoothedValue
+import com.example.mobiline.sensors.CalibrationOffset
+import com.example.mobiline.sensors.OrientationRepository
+import com.example.mobiline.sensors.Orientation
+import com.example.mobiline.sensors.SmoothedValue
 import kotlin.math.abs
 
 /**
@@ -41,7 +41,7 @@ import kotlin.math.abs
  * the wheel's real angle, not "wheel angle + however crooked the phone sits
  * in its holder."
  *
- * TWO-POSITION METHOD (matches Gyraline's procedure):
+ * TWO-POSITION METHOD:
  * A single reading can't separate "phone is crooked in its holder" from
  * "surface isn't quite level." So we take TWO readings:
  *   1. measure with the top of the phone pointing in some direction

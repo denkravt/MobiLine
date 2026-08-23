@@ -1,13 +1,13 @@
 # MobiLine
 
-An Android/Kotlin wheel-alignment measurement app, modeled on the Gyraline
-G1/G2 concept: use the phone's onboard sensors to read camber and toe off a
+An Android/Kotlin wheel-alignment measurement app: use the phone's onboard
+sensors to read camber and toe off a
 wheel rim.
 
 ## What's here
 
 ```
-app/src/main/java/com/example/gyrolinediy/
+app/src/main/java/com/example/mobiline/
 ├── MainActivity.kt                 # Compose nav host: calibration -> home -> preflight -> camber/toe
 ├── sensors/
 │   └── OrientationRepository.kt    # Sensor fusion, smoothing, calibration offset math
@@ -68,12 +68,8 @@ app/src/main/java/com/example/gyrolinediy/
    sideways for your asset, fix it once via `ToeVisualBaseRotation` in
    `ToeScreen.kt`. The sign convention (positive = toe-in) is a
    guess based on a typical mounting orientation — flip it in `ToeScreen.kt`
-   if your physical rig reads backwards. Calibrate this against a vehicle
-   you already know is tracking straight, once, and then trust it.
-   Note: this rear-axle-average approach is a solid practical
-   approximation, not a lab-grade "true centerline" — the commercial
-   tool's more rigorous Body Align mode measures fixed points on the car's
-   frame/body instead. Worth building later if you need tighter accuracy.
+    if your physical rig reads backwards. Calibrate this against a vehicle
+    you already know is tracking straight, once, and then trust it.
 5. **PreflightScreen** is a checklist (level ground, steering centered,
    parking brake on, tires inflated, suspension settled) that has to be
    fully checked before either measurement mode is reachable. These
@@ -95,7 +91,7 @@ app/src/main/java/com/example/gyrolinediy/
 
 ## Running it
 
-Open the `GyrolineDIY/` folder directly in Android Studio (Koala or newer):
+Open the project folder directly in Android Studio (Koala or newer):
 File → Open → select this folder. It will sync Gradle automatically.
 Minimum SDK is 26 (Android 8.0), so it'll run on most phones from the last
 several years. You'll need a real device (or an emulator with simulated

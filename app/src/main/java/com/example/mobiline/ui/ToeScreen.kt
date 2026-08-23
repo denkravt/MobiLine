@@ -1,4 +1,4 @@
-package com.example.gyrolinediy.ui
+package com.example.mobiline.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -28,12 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gyrolinediy.R
-import com.example.gyrolinediy.sensors.CalibrationOffset
-import com.example.gyrolinediy.sensors.Orientation
-import com.example.gyrolinediy.sensors.OrientationRepository
-import com.example.gyrolinediy.sensors.SmoothedValue
-import com.example.gyrolinediy.sensors.applyOffset
+import com.example.mobiline.R
+import com.example.mobiline.sensors.CalibrationOffset
+import com.example.mobiline.sensors.Orientation
+import com.example.mobiline.sensors.OrientationRepository
+import com.example.mobiline.sensors.SmoothedValue
+import com.example.mobiline.sensors.applyOffset
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -50,10 +50,10 @@ import kotlin.math.sin
  * like a 19° rear total toe: it trusted two absolute compass headings taken
  * at opposite sides of a car-sized chunk of steel.
  *
- * Gyraline's manual solves this in Body Align mode by measuring every wheel
- * against a FIXED BODY REFERENCE SURFACE captured on the SAME side moments
- * before the wheel (p.18: "you have approximately 20 seconds to take a
- * wheel measurement after refreshing the base"). The body spot and the
+ * The fix is to measure every wheel against a FIXED BODY REFERENCE SURFACE
+ * captured on the SAME side moments before the wheel ("you have
+ * approximately 20 seconds to take a wheel measurement after refreshing
+ * the base" is the rule of thumb). The body spot and the
  * wheel are read back-to-back with the phone in the same position and
  * orientation, so the magnetic distortion -- which is roughly constant
  * across that small area and short time -- is present in BOTH readings and
@@ -62,9 +62,9 @@ import kotlin.math.sin
  * HOW THE PHONE MUST BE MOUNTED -- this has to be right or every reading
  * is garbage:
  * Place the phone FLAT against the surface (screen facing UP toward the
- * sky) and keep the TOP of the phone pointing toward the FRONT of the car.
- * This matches Gyraline's own procedure ("Front at the top of the screen
- * must face the front of the vehicle at all times"). Yaw from the
+ * sky) and keep the TOP of the phone pointing toward the FRONT of the car
+ * ("Front" at the top of the screen must face the front of the vehicle at
+ * all times). Yaw from the
  * rotation-vector sensor is only a true compass heading when the phone is
  * flat; held upright (as Camber does) the number is meaningless, which is
  * the flaw behind the earlier wrong readings.
@@ -116,7 +116,7 @@ fun ToeScreen(
     var leftBaseReadings by remember { mutableStateOf(listOf<Float>()) }
     var rightBaseReadings by remember { mutableStateOf(listOf<Float>()) }
 
-    // 3 readings per wheel (Gyraline "6 point" Quick Align), averaged
+    // 3 readings per wheel, averaged
     // together to filter out sensor noise before any toe math.
     var rearLeftReadings by remember { mutableStateOf(listOf<Float>()) }
     var rearRightReadings by remember { mutableStateOf(listOf<Float>()) }

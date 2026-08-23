@@ -6,7 +6,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="Gyroline DIY"
+        android:label="MobiLine"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
         <activity
