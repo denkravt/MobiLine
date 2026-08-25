@@ -257,6 +257,18 @@ fun ToeScreen(
             )
         }
 
+        if (repository.usesMagnetometerForHeading()) {
+            Text(
+                text = "\nThis device has no gyroscope, so headings fall " +
+                    "back to the compass. Expect more noise/instability in " +
+                    "readings taken close to the car's steel body than on " +
+                    "a device with a gyroscope.",
+                textAlign = TextAlign.Center,
+                color = Color(0xFFC62828),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         Text(
             text = "\n%.2f°".format(current.yaw),
             color = if (isLevelEnough) Color(0xFF2E7D32) else Color(0xFFC62828)
