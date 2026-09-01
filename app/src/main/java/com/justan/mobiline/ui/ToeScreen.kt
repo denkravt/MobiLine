@@ -1,4 +1,4 @@
-package com.example.mobiline.ui
+package com.justan.mobiline.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -31,12 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mobiline.R
-import com.example.mobiline.sensors.CalibrationOffset
-import com.example.mobiline.sensors.Orientation
-import com.example.mobiline.sensors.OrientationRepository
-import com.example.mobiline.sensors.SmoothedValue
-import com.example.mobiline.sensors.applyOffset
+import com.justan.mobiline.R
+import com.justan.mobiline.sensors.CalibrationOffset
+import com.justan.mobiline.sensors.Orientation
+import com.justan.mobiline.sensors.OrientationRepository
+import com.justan.mobiline.sensors.SmoothedValue
+import com.justan.mobiline.sensors.applyOffset
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos

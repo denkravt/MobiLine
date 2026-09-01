@@ -1,4 +1,4 @@
-package com.example.mobiline.ui
+package com.justan.mobiline.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

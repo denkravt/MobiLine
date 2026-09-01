@@ -1,4 +1,4 @@
-package com.example.mobiline.sensors
+package com.justan.mobiline.sensors
 
 import android.content.Context
 import android.hardware.Sensor

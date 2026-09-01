@@ -1,4 +1,4 @@
-package com.example.mobiline
+package com.justan.mobiline
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,13 +10,13 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.mobiline.sensors.CalibrationOffset
-import com.example.mobiline.sensors.OrientationRepository
-import com.example.mobiline.ui.CalibrationScreen
-import com.example.mobiline.ui.CamberScreen
-import com.example.mobiline.ui.HomeScreen
-import com.example.mobiline.ui.PreflightScreen
-import com.example.mobiline.ui.ToeScreen
+import com.justan.mobiline.sensors.CalibrationOffset
+import com.justan.mobiline.sensors.OrientationRepository
+import com.justan.mobiline.ui.CalibrationScreen
+import com.justan.mobiline.ui.CamberScreen
+import com.justan.mobiline.ui.HomeScreen
+import com.justan.mobiline.ui.PreflightScreen
+import com.justan.mobiline.ui.ToeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
