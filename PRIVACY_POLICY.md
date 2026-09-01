@@ -26,4 +26,4 @@ MobiLine does not collect any information from anyone, including children under 
 We may update this policy from time to time. We will post any changes here with an updated revision date.
 
 ## Contact
-Questions? Contact: [support@justanalarm.app](mailto:support@justanalarm.app)
+Questions? Contact: [justanappfeedback@gmail.com](mailto:justanappfeedback@gmail.com)
