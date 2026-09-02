@@ -3,7 +3,6 @@ package com.justan.mobiline
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,6 +14,7 @@ import com.justan.mobiline.sensors.OrientationRepository
 import com.justan.mobiline.ui.CalibrationScreen
 import com.justan.mobiline.ui.CamberScreen
 import com.justan.mobiline.ui.HomeScreen
+import com.justan.mobiline.ui.MobiLineTheme
 import com.justan.mobiline.ui.PreflightScreen
 import com.justan.mobiline.ui.ToeScreen
 
@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         val repo = OrientationRepository(applicationContext)
 
         setContent {
-            MaterialTheme {
+            MobiLineTheme {
                 Surface {
                     val navController = rememberNavController()
                     // Calibration offset is shared app-wide for this simple version.

@@ -130,7 +130,7 @@ fun CalibrationScreen(
 
         Text(
             text = "\nCurrent reading: %.1f°".format(latest.roll),
-            color = if (isSteady) Color(0xFF2E7D32) else Color(0xFFC62828)
+            color = if (isSteady) MobGreen else Color(0xFFC62828)
         )
 
         Button(onClick = {

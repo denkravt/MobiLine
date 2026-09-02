@@ -271,7 +271,7 @@ fun ToeScreen(
 
         Text(
             text = "\n%.2f°".format(current.yaw),
-            color = if (isLevelEnough) Color(0xFF2E7D32) else Color(0xFFC62828)
+            color = if (isLevelEnough) MobGreen else Color(0xFFC62828)
         )
         Text(
             if (isLevelEnough) "Steady -- tap a tire or base button to capture"
