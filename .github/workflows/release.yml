@@ -44,4 +44,4 @@ jobs:
           packageName: com.justan.mobiline
           releaseFiles: app/build/outputs/bundle/release/*.aab
           tracks: internal
-          in_app_update_priority: 0
+          inAppUpdatePriority: 0
