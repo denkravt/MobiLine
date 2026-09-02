@@ -4,6 +4,7 @@
 keystore.properties
 *.jks
 *.keystore
+/play-assets
 .idea/
 .DS_Store
 /build

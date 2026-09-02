@@ -1,0 +1,46 @@
+# Release to Google Play Internal Testing.
+# Trigger: push a git tag matching v*  →  build signed AAB  →  upload to Internal track.
+# Your phone (added as an internal tester) auto-updates from the Play Store.
+name: Release to Internal Testing
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Restore signing key
+        env:
+          KS: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+          PROPS: ${{ secrets.SIGNING_PROPS }}
+        run: |
+          echo "$KS" | base64 -d > release.jks
+          printf '%s' "$PROPS" > keystore.properties
+
+      - name: Build signed release AAB
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Upload to Play Internal Testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.justan.mobiline
+          releaseFiles: app/build/outputs/bundle/release/*.aab
+          track: internal
