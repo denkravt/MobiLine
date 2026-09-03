@@ -132,8 +132,8 @@ fun CamberScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+            .padding(horizontal = 28.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
@@ -314,7 +314,7 @@ private fun CamberAxle(
     onRightTap: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -363,7 +363,7 @@ private fun CamberTireCapture(
             contentDescription = "$label tire -- tap to capture camber",
             contentScale = ContentScale.Fit,
             modifier = Modifier
-                .size(width = 44.dp, height = 110.dp)
+                .size(width = 54.dp, height = 132.dp)
                 .graphicsLayer {
                     rotationZ = if (value != null) CamberVisualBaseRotation + rotationDeg else CamberVisualBaseRotation
                 }
