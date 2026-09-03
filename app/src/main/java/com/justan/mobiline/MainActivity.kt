@@ -32,29 +32,39 @@ class MainActivity : ComponentActivity() {
                     // Persist it (DataStore/Room) later if you want it to survive restarts.
                     val calibrationOffset = remember { mutableStateOf(CalibrationOffset()) }
 
-                    NavHost(navController = navController, startDestination = "calibration") {
-                        composable("calibration") {
-                            CalibrationScreen(
-                                repository = repo,
-                                onCalibrated = { offset ->
-                                    calibrationOffset.value = offset
-                                    navController.navigate("home") {
-                                        popUpTo("calibration") { inclusive = true }
-                                    }
-                                }
-                            )
-                        }
+                    NavHost(navController = navController, startDestination = "home") {
+                        // Dashboard is the entry point. Choosing a mode sends
+                        // the user through calibration (the level reading)
+                        // first, so the offset is ready before measuring.
                         composable("home") {
                             HomeScreen(
-                                onSelectCamber = { navController.navigate("preflight_camber") },
-                                onSelectToe = { navController.navigate("preflight_toe") },
-                                onRecalibrate = {
-                                    navController.navigate("calibration") {
-                                        popUpTo("home") { inclusive = true }
-                                    }
-                                }
+                                onSelectCamber = { navController.navigate("calib_camber") },
+                                onSelectToe = { navController.navigate("calib_toe") },
+                                onRecalibrate = { navController.navigate("calib_recal") }
                             )
                         }
+
+                        // Calibration once per chosen mode; on completion run the
+                        // offset and route on to that mode's preflight.
+                        fun calibrateThen(dest: String, pop: String) =
+                            {
+                                offset: CalibrationOffset ->
+                                calibrationOffset.value = offset
+                                navController.navigate(dest) {
+                                    popUpTo(pop) { inclusive = true }
+                                }
+                            }
+
+                        composable("calib_camber") {
+                            CalibrationScreen(repository = repo, onCalibrated = calibrateThen("preflight_camber", "calib_camber"))
+                        }
+                        composable("calib_toe") {
+                            CalibrationScreen(repository = repo, onCalibrated = calibrateThen("preflight_toe", "calib_toe"))
+                        }
+                        composable("calib_recal") {
+                            CalibrationScreen(repository = repo, onCalibrated = calibrateThen("home", "calib_recal"))
+                        }
+
                         composable("preflight_camber") {
                             PreflightScreen(
                                 modeName = "Camber",

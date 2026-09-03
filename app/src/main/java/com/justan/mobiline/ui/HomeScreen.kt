@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun HomeScreen(
@@ -31,8 +32,15 @@ fun HomeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("MobiLine", fontWeight = FontWeight.Bold)
-        Text("What do you want to measure?")
+        Text("MobiLine", fontWeight = FontWeight.Bold, fontSize = 32.sp)
+        Text(
+            "Measure wheel camber and toe with your phone's sensors - no " +
+                "expensive alignment rig needed.",
+            textAlign = TextAlign.Center,
+            color = Color.Gray,
+            modifier = Modifier.fillMaxWidth(0.8f).padding(top = 8.dp)
+        )
+        Text("What do you want to measure?", modifier = Modifier.padding(top = 24.dp))
 
         Column(
             modifier = Modifier
