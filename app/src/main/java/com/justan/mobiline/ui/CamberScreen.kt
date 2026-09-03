@@ -65,7 +65,8 @@ import kotlin.math.sin
 @Composable
 fun CamberScreen(
     repository: OrientationRepository,
-    calibrationOffset: CalibrationOffset
+    calibrationOffset: CalibrationOffset,
+    onBack: () -> Unit
 ) {
     var current by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
     val smoothedRoll = remember { SmoothedValue(alpha = 0.1f) }
@@ -136,6 +137,8 @@ fun CamberScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        BackButton(onBack = onBack)
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

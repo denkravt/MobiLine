@@ -25,7 +25,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PreflightScreen(
     modeName: String,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    onBack: () -> Unit
 ) {
     val items = buildList {
         add("The car is parked on flat, level ground.")
@@ -57,6 +58,8 @@ fun PreflightScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        BackButton(onBack = onBack)
+
         Text("Before measuring $modeName", fontWeight = FontWeight.Bold)
 
         Text(

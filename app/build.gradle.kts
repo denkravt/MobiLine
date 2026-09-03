@@ -30,8 +30,8 @@ android {
         applicationId = "com.justan.mobiline"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.0.10"
+        versionCode = 12
+        versionName = "1.1.0"
     }
 
     buildFeatures {
@@ -65,6 +65,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.1")
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.8")
 }

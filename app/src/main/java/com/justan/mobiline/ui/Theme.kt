@@ -1,9 +1,17 @@
 package com.justan.mobiline.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 // Brand palette — matches the MobiLine logo (#2B9B51).
 val MobGreen = Color(0xFF2B9B51)        // primary brand green
@@ -27,4 +35,25 @@ private val MobiLineColorScheme = lightColorScheme(
 @Composable
 fun MobiLineTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = MobiLineColorScheme, content = content)
+}
+
+/**
+ * Standard back arrow pinned to the top-left of a screen. To keep any
+ * screen title centered, wrap this in a `Box(fillMaxWidth())` and align it
+ * start, with no PaddingValues -- the parent column's vertical padding
+ * scopes it correctly.
+ */
+@Composable
+fun BackButton(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = Modifier.fillMaxWidth().then(modifier)) {
+        IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back"
+            )
+        }
+    }
 }

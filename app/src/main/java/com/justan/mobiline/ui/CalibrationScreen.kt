@@ -58,7 +58,8 @@ import kotlin.math.abs
 @Composable
 fun CalibrationScreen(
     repository: OrientationRepository,
-    onCalibrated: (CalibrationOffset) -> Unit
+    onCalibrated: (CalibrationOffset) -> Unit,
+    onBack: () -> Unit
 ) {
     var latest by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
     var firstReading by remember { mutableStateOf<Orientation?>(null) }
@@ -88,6 +89,8 @@ fun CalibrationScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        BackButton(onBack = onBack)
+
         Text(
             "Step 1: Calibrate",
             fontWeight = FontWeight.Bold

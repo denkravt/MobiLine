@@ -94,7 +94,8 @@ import kotlin.math.sin
 @Composable
 fun ToeScreen(
     repository: OrientationRepository,
-    calibrationOffset: CalibrationOffset
+    calibrationOffset: CalibrationOffset,
+    onBack: () -> Unit
 ) {
     var current by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
     val smoothedYaw = remember { SmoothedValue(alpha = 0.1f) }
@@ -222,6 +223,8 @@ fun ToeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        BackButton(onBack = onBack)
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

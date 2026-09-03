@@ -56,37 +56,53 @@ class MainActivity : ComponentActivity() {
                             }
 
                         composable("calib_camber") {
-                            CalibrationScreen(repository = repo, onCalibrated = calibrateThen("preflight_camber", "calib_camber"))
+                            CalibrationScreen(
+                                repository = repo,
+                                onBack = { navController.popBackStack() },
+                                onCalibrated = calibrateThen("preflight_camber", "calib_camber")
+                            )
                         }
                         composable("calib_toe") {
-                            CalibrationScreen(repository = repo, onCalibrated = calibrateThen("preflight_toe", "calib_toe"))
+                            CalibrationScreen(
+                                repository = repo,
+                                onBack = { navController.popBackStack() },
+                                onCalibrated = calibrateThen("preflight_toe", "calib_toe")
+                            )
                         }
                         composable("calib_recal") {
-                            CalibrationScreen(repository = repo, onCalibrated = calibrateThen("home", "calib_recal"))
+                            CalibrationScreen(
+                                repository = repo,
+                                onBack = { navController.popBackStack() },
+                                onCalibrated = calibrateThen("home", "calib_recal")
+                            )
                         }
 
                         composable("preflight_camber") {
                             PreflightScreen(
                                 modeName = "Camber",
-                                onContinue = { navController.navigate("camber") }
+                                onContinue = { navController.navigate("camber") },
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable("preflight_toe") {
                             PreflightScreen(
                                 modeName = "Toe",
-                                onContinue = { navController.navigate("toe") }
+                                onContinue = { navController.navigate("toe") },
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable("camber") {
                             CamberScreen(
                                 repository = repo,
-                                calibrationOffset = calibrationOffset.value
+                                calibrationOffset = calibrationOffset.value,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable("toe") {
                             ToeScreen(
                                 repository = repo,
-                                calibrationOffset = calibrationOffset.value
+                                calibrationOffset = calibrationOffset.value,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                     }
