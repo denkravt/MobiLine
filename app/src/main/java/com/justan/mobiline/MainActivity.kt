@@ -17,6 +17,7 @@ import com.justan.mobiline.ui.CamberScreen
 import com.justan.mobiline.ui.HomeScreen
 import com.justan.mobiline.ui.MobiLineTheme
 import com.justan.mobiline.ui.PreflightScreen
+import com.justan.mobiline.ui.SavedSessionsScreen
 import com.justan.mobiline.ui.ToeScreen
 
 class MainActivity : ComponentActivity() {
@@ -42,7 +43,8 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onSelectCamber = { navController.navigate("calib_camber") },
                                 onSelectToe = { navController.navigate("calib_toe") },
-                                onRecalibrate = { navController.navigate("calib_recal") }
+                                onRecalibrate = { navController.navigate("calib_recal") },
+                                onSavedSessions = { navController.navigate("sessions") }
                             )
                         }
 
@@ -61,6 +63,7 @@ class MainActivity : ComponentActivity() {
                             CalibrationScreen(
                                 repository = repo,
                                 onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") },
                                 onCalibrated = calibrateThen("preflight_camber", "calib_camber")
                             )
                         }
@@ -68,6 +71,7 @@ class MainActivity : ComponentActivity() {
                             CalibrationScreen(
                                 repository = repo,
                                 onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") },
                                 onCalibrated = calibrateThen("preflight_toe", "calib_toe")
                             )
                         }
@@ -75,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             CalibrationScreen(
                                 repository = repo,
                                 onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") },
                                 onCalibrated = calibrateThen("home", "calib_recal")
                             )
                         }
@@ -83,14 +88,16 @@ class MainActivity : ComponentActivity() {
                             PreflightScreen(
                                 modeName = "Camber",
                                 onContinue = { navController.navigate("camber") },
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") }
                             )
                         }
                         composable("preflight_toe") {
                             PreflightScreen(
                                 modeName = "Toe",
                                 onContinue = { navController.navigate("toe") },
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") }
                             )
                         }
                         composable("camber") {
@@ -98,13 +105,21 @@ class MainActivity : ComponentActivity() {
                                 repository = repo,
                                 calibrationOffset = calibrationOffset.value,
                                 store = sessionStore,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") }
                             )
                         }
                         composable("toe") {
                             ToeScreen(
                                 repository = repo,
                                 calibrationOffset = calibrationOffset.value,
+                                store = sessionStore,
+                                onBack = { navController.popBackStack() },
+                                onSavedSessions = { navController.navigate("sessions") }
+                            )
+                        }
+                        composable("sessions") {
+                            SavedSessionsScreen(
                                 store = sessionStore,
                                 onBack = { navController.popBackStack() }
                             )

@@ -59,7 +59,8 @@ import kotlin.math.abs
 fun CalibrationScreen(
     repository: OrientationRepository,
     onCalibrated: (CalibrationOffset) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSavedSessions: () -> Unit
 ) {
     var latest by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
     var firstReading by remember { mutableStateOf<Orientation?>(null) }
@@ -89,7 +90,7 @@ fun CalibrationScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BackButton(onBack = onBack)
+        TopBar(onBack = onBack, onSavedSessions = onSavedSessions)
 
         Text(
             "Step 1: Calibrate",

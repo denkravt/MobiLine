@@ -98,7 +98,8 @@ fun ToeScreen(
     repository: OrientationRepository,
     calibrationOffset: CalibrationOffset,
     store: SessionStore,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSavedSessions: () -> Unit
 ) {
     var current by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
     val smoothedYaw = remember { SmoothedValue(alpha = 0.1f) }
@@ -226,18 +227,9 @@ fun ToeScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BackButton(onBack = onBack)
+        TopBar(onBack = onBack, onSavedSessions = onSavedSessions, onInfo = { showInfo = !showInfo })
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Toe", fontWeight = FontWeight.Bold)
-            TextButton(onClick = { showInfo = !showInfo }) {
-                Text(if (showInfo) "\u2715 Info" else "\u2630 Info")
-            }
-        }
+        Text("Toe", fontWeight = FontWeight.Bold)
 
         if (showInfo) {
             Text(

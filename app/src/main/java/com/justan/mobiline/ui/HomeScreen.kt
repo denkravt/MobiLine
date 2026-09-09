@@ -1,6 +1,7 @@
 package com.justan.mobiline.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +11,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,8 +27,11 @@ import androidx.compose.ui.unit.sp
 fun HomeScreen(
     onSelectCamber: () -> Unit,
     onSelectToe: () -> Unit,
-    onRecalibrate: () -> Unit
+    onRecalibrate: () -> Unit,
+    onSavedSessions: () -> Unit
 ) {
+    var showAbout by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -32,6 +40,25 @@ fun HomeScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            ScreenMenu(
+                onSavedSessions = onSavedSessions,
+                onInfo = { showAbout = !showAbout },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            )
+        }
+
+        if (showAbout) {
+            Text(
+                "MobiLine measures wheel camber and toe using your phone's " +
+                    "built-in sensors, entirely on-device -- no accounts, no " +
+                    "internet, and nothing leaves your phone.",
+                textAlign = TextAlign.Center,
+                color = Color.Gray,
+                modifier = Modifier.fillMaxWidth(0.9f).padding(top = 8.dp)
+            )
+        }
+
         Text("MobiLine", fontWeight = FontWeight.Bold, fontSize = 32.sp)
         Text(
             "Measure wheel camber and toe with your phone's sensors - no " +

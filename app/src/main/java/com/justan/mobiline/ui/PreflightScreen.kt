@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.dp
 fun PreflightScreen(
     modeName: String,
     onContinue: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSavedSessions: () -> Unit
 ) {
     val items = buildList {
         add("The car is parked on flat, level ground.")
@@ -58,7 +59,7 @@ fun PreflightScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BackButton(onBack = onBack)
+        TopBar(onBack = onBack, onSavedSessions = onSavedSessions)
 
         Text("Before measuring $modeName", fontWeight = FontWeight.Bold)
 
