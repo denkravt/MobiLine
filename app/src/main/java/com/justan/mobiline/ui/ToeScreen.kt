@@ -227,13 +227,15 @@ fun ToeScreen(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TopBar(onBack = onBack, onSavedSessions = onSavedSessions, onInfo = { showInfo = !showInfo })
+        TopBar(onBack = onBack, onSavedSessions = onSavedSessions, onInfo = { showInfo = true })
 
         Text("Toe", fontWeight = FontWeight.Bold)
 
         if (showInfo) {
-            Text(
-                text = "\nTap a tire to capture that wheel (3 taps, " +
+            InfoDialog(
+                title = "Toe \u2014 how to measure",
+                onDismiss = { showInfo = false },
+                body = "Tap a tire to capture that wheel (3 taps, " +
                     "averaged -- tap again after to re-capture it). Hold " +
                     "the phone FLAT against the outer rim edge, screen " +
                     "facing UP toward the sky, TOP of the phone pointing " +
@@ -248,10 +250,7 @@ fun ToeScreen(
                     "reference is a flat, repeatable spot on the car -- " +
                     "the pinch-weld seam under the rocker panel works on " +
                     "almost any car. Use the same spot every time on that " +
-                    "side.",
-                textAlign = TextAlign.Center,
-                color = Color.Gray,
-                modifier = Modifier.fillMaxWidth()
+                    "side."
             )
         }
 
