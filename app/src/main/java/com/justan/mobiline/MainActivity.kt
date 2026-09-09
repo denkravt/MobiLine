@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.justan.mobiline.sensors.CalibrationOffset
 import com.justan.mobiline.sensors.OrientationRepository
+import com.justan.mobiline.data.SessionStore
 import com.justan.mobiline.ui.CalibrationScreen
 import com.justan.mobiline.ui.CamberScreen
 import com.justan.mobiline.ui.HomeScreen
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val repo = OrientationRepository(applicationContext)
+        val sessionStore = SessionStore(applicationContext)
 
         setContent {
             MobiLineTheme {
@@ -95,6 +97,7 @@ class MainActivity : ComponentActivity() {
                             CamberScreen(
                                 repository = repo,
                                 calibrationOffset = calibrationOffset.value,
+                                store = sessionStore,
                                 onBack = { navController.popBackStack() }
                             )
                         }
@@ -102,6 +105,7 @@ class MainActivity : ComponentActivity() {
                             ToeScreen(
                                 repository = repo,
                                 calibrationOffset = calibrationOffset.value,
+                                store = sessionStore,
                                 onBack = { navController.popBackStack() }
                             )
                         }

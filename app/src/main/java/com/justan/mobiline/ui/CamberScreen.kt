@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justan.mobiline.R
+import com.justan.mobiline.data.SavedMeasurement
+import com.justan.mobiline.data.SessionStore
 import com.justan.mobiline.sensors.CalibrationOffset
 import com.justan.mobiline.sensors.Orientation
 import com.justan.mobiline.sensors.OrientationRepository
@@ -66,6 +68,7 @@ import kotlin.math.sin
 fun CamberScreen(
     repository: OrientationRepository,
     calibrationOffset: CalibrationOffset,
+    store: SessionStore,
     onBack: () -> Unit
 ) {
     var current by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
@@ -204,6 +207,20 @@ fun CamberScreen(
             splitLabel = "Split",
             onLeftTap = { onWheelTap(rearLeftReadings, { rearLeftReadings = it }, { rearLeftCamber = it }) },
             onRightTap = { onWheelTap(rearRightReadings, { rearRightReadings = it }, { rearRightCamber = it }) }
+        )
+
+        SessionSaveSection(
+            store = store,
+            mode = "Camber",
+            enabled = frontLeft != null && frontRight != null && rearLeft != null && rearRight != null,
+            buildMeasurements = {
+                listOf(
+                    SavedMeasurement("Front-left", frontLeft?.toDouble() ?: 0.0),
+                    SavedMeasurement("Front-right", frontRight?.toDouble() ?: 0.0),
+                    SavedMeasurement("Rear-left", rearLeft?.toDouble() ?: 0.0),
+                    SavedMeasurement("Rear-right", rearRight?.toDouble() ?: 0.0)
+                )
+            }
         )
 
         if (hasResults) {

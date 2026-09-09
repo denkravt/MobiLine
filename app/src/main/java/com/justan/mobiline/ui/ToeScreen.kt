@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justan.mobiline.R
+import com.justan.mobiline.data.SavedMeasurement
+import com.justan.mobiline.data.SessionStore
 import com.justan.mobiline.sensors.CalibrationOffset
 import com.justan.mobiline.sensors.Orientation
 import com.justan.mobiline.sensors.OrientationRepository
@@ -95,6 +97,7 @@ import kotlin.math.sin
 fun ToeScreen(
     repository: OrientationRepository,
     calibrationOffset: CalibrationOffset,
+    store: SessionStore,
     onBack: () -> Unit
 ) {
     var current by remember { mutableStateOf(Orientation(0f, 0f, 0f)) }
@@ -477,6 +480,22 @@ fun ToeScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
         }
+
+        SessionSaveSection(
+            store = store,
+            mode = "Toe",
+            enabled = frontTotalToe != null && rearTotalToe != null,
+            buildMeasurements = {
+                listOf(
+                    SavedMeasurement("Front-left", frontLeftToe?.toDouble() ?: 0.0),
+                    SavedMeasurement("Front-right", frontRightToe?.toDouble() ?: 0.0),
+                    SavedMeasurement("Front total toe", frontTotalToe?.toDouble() ?: 0.0),
+                    SavedMeasurement("Rear-left", rearLeftToe?.toDouble() ?: 0.0),
+                    SavedMeasurement("Rear-right", rearRightToe?.toDouble() ?: 0.0),
+                    SavedMeasurement("Rear total toe", rearTotalToe?.toDouble() ?: 0.0)
+                )
+            }
+        )
 
         Button(onClick = {
             leftBaseReadings = emptyList()
